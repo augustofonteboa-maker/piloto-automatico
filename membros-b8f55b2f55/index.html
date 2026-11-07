@@ -1,0 +1,718 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#1f0c33">
+<title>Piloto Automático · Aulas</title>
+<style>
+@font-face{font-family:"PolySans";src:url(../fonts/polysans-400.woff2) format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:"PolySans";src:url(../fonts/polysans-600.woff2) format("woff2");font-weight:600;font-display:swap}
+@font-face{font-family:"PolySans";src:url(../fonts/polysans-800.woff2) format("woff2");font-weight:800;font-display:swap}
+/* Layout: sala escura de aula; player no topo, lista de aulas ao lado (no celular, abaixo), materiais no fim. Mesmo sistema da página de venda. */
+:root{
+  color-scheme:dark;
+  --night:#1f0c33;--night-2:#160824;--night-3:#2a1245;--night-4:#351a56;
+  --violet:#af5eff;--lilac:#d9b3ff;--paper:#faf5ff;
+  --ok:#7cffb2;
+  --mute:rgba(250,245,255,.68);--line:rgba(217,179,255,.16);
+  --f:"PolySans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --out:cubic-bezier(.2,.8,.2,1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%;background:var(--night-2)}
+body{font-family:var(--f);font-size:1rem;line-height:1.6;color:var(--paper);background:var(--night-2);-webkit-font-smoothing:antialiased;padding-bottom:env(safe-area-inset-bottom,0px)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:60;background:var(--night)}
+img{display:block;max-width:100%}
+a{color:inherit}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+:focus-visible{outline:2px solid var(--violet);outline-offset:3px;border-radius:8px}
+.gut{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.eyebrow{font-family:var(--mono);font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--lilac);font-weight:600}
+
+/* topo */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:50;background:rgba(31,12,51,.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.top .in{max-width:1280px;margin-inline:auto;display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:58px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:600;letter-spacing:-.01em;text-decoration:none}
+.sw{width:32px;height:19px;border-radius:999px;background:var(--violet);position:relative;flex:none}
+.sw::after{content:"";position:absolute;right:3px;top:3px;width:13px;height:13px;border-radius:50%;background:var(--paper)}
+.prog{display:flex;align-items:center;gap:10px;font-size:.82rem;color:var(--mute);font-variant-numeric:tabular-nums;white-space:nowrap}
+.bar{width:88px;height:6px;border-radius:999px;background:var(--night-4);overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--ok);border-radius:inherit;transition:width .5s var(--out)}
+
+/* palco */
+.stage{max-width:1280px;margin-inline:auto;display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:28px;padding-block:24px 8px}
+.player{background:#000;border-radius:18px;overflow:hidden;border:1px solid var(--line);aspect-ratio:16/9}
+.player video{display:block;width:100%;height:100%;background:#000}
+.info{display:grid;gap:14px;padding-top:20px}
+.info h1{font-size:clamp(1.55rem,1.2rem + 1.4vw,2.2rem);line-height:1.08;letter-spacing:-.035em;font-weight:600;text-wrap:balance}
+.desc{color:var(--mute);max-width:40em}
+.acts{display:flex;flex-wrap:wrap;gap:10px}
+.done,.next{display:inline-flex;align-items:center;gap:10px;min-height:46px;padding:0 20px;border-radius:999px;font-weight:600;font-size:.93rem;transition:background .3s,transform .3s var(--out)}
+.done{border:1px solid var(--line);background:var(--night-3)}
+.done .ck{width:18px;height:18px;border-radius:50%;border:2px solid var(--lilac);position:relative;flex:none}
+.done[aria-pressed="true"]{background:rgba(124,255,178,.12);border-color:rgba(124,255,178,.4)}
+.done[aria-pressed="true"] .ck{border-color:var(--ok);background:var(--ok)}
+.done[aria-pressed="true"] .ck::after{content:"";position:absolute;left:4px;top:1px;width:5px;height:9px;border:solid var(--night-2);border-width:0 2px 2px 0;transform:rotate(45deg)}
+.next{background:var(--violet);color:var(--night-2)}
+.next::after{content:"→"}
+.done:hover,.next:hover{transform:translateY(-1px)}
+.mats{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:.86rem}
+.mats>span{color:var(--mute);margin-right:4px}
+.mlink{border:1px solid var(--line);border-radius:999px;padding:6px 12px;text-decoration:none;color:var(--lilac)}
+.mlink:hover{background:var(--night-3)}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-top:6px}
+.tab{padding:12px 14px;font-weight:600;font-size:.93rem;color:var(--mute);border-bottom:2px solid transparent;margin-bottom:-1px}
+.tab[aria-selected="true"]{color:var(--paper);border-color:var(--violet)}
+.pane{padding-top:6px}
+.prose{display:grid;gap:12px;max-width:44em;color:rgba(250,245,255,.88)}
+.prose h4{font-size:1rem;font-weight:600;color:var(--paper);margin-top:10px}
+.prose ul,.prose ol{display:grid;gap:6px;padding-left:1.2em}
+.prose ul.check{list-style:none;padding-left:0}
+.prose ul.check li{position:relative;padding-left:28px}
+.prose ul.check li::before{content:"";position:absolute;left:0;top:.3em;width:16px;height:16px;border-radius:5px;border:2px solid var(--lilac)}
+.prose b{color:var(--paper);font-weight:600}
+.prose code{font-family:var(--mono);font-size:.86em;background:var(--night-3);padding:1px 6px;border-radius:6px}
+.hint{font-size:.84rem;color:var(--mute)}
+.tl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:baseline}
+.ts{font-family:var(--mono);font-size:.76rem;font-variant-numeric:tabular-nums;color:var(--lilac);border:1px solid var(--line);border-radius:999px;padding:2px 9px;min-width:56px;text-align:center}
+.ts:hover{background:var(--night-3)}
+
+/* lista */
+.side h2,.matwrap h2{font-size:1.05rem;font-weight:600;letter-spacing:-.01em;display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:12px}
+.side h2 small,.matwrap h2 small{font-weight:400;font-size:.82rem;color:var(--mute)}
+.side{align-self:start;position:sticky;top:calc(env(safe-area-inset-top,0px) + 78px)}
+.list{list-style:none;display:grid;gap:6px}
+.item{display:grid;grid-template-columns:112px minmax(0,1fr) auto;grid-template-rows:auto auto;gap:2px 14px;align-items:center;padding:8px;border-radius:14px;text-decoration:none;border:1px solid transparent;position:relative}
+.item:hover{background:var(--night)}
+.item[aria-current="true"]{background:var(--night-3);border-color:var(--line)}
+.item img{grid-row:1/3;width:112px;height:63px;object-fit:cover;border-radius:9px;background:var(--night-3)}
+.item .txt{display:grid;gap:1px;min-width:0}
+.item .n{font-family:var(--mono);font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--lilac)}
+.item .t{font-size:.93rem;font-weight:600;line-height:1.25}
+.item .d{grid-column:3;grid-row:1;font-family:var(--mono);font-size:.74rem;color:var(--mute);font-variant-numeric:tabular-nums}
+.item .st{grid-column:3;grid-row:2;justify-self:end;width:18px;height:18px;border-radius:50%;border:2px solid var(--night-4);position:relative}
+.item.seen .st{border-color:var(--ok);background:var(--ok)}
+.item.seen .st::after{content:"";position:absolute;left:4px;top:1px;width:5px;height:9px;border:solid var(--night-2);border-width:0 2px 2px 0;transform:rotate(45deg)}
+
+/* materiais */
+.matwrap{max-width:1280px;margin-inline:auto;padding-block:48px 64px}
+.matgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}
+.mat{background:var(--night);border:1px solid var(--line);border-radius:20px;padding:22px;display:grid;gap:14px;scroll-margin-top:90px}
+.mat:target{border-color:var(--violet)}
+.mat h3{font-size:1.15rem;font-weight:600;letter-spacing:-.015em}
+.mat details{border:1px solid var(--line);border-radius:12px;padding:10px 14px}
+.mat summary{cursor:pointer;font-weight:600;font-size:.9rem;color:var(--lilac)}
+.mat details .prose{padding-top:10px;font-size:.92rem}
+.code{font-family:var(--mono);font-size:.78rem;line-height:1.55;white-space:pre-wrap;word-break:break-word;background:var(--night-2);border:1px solid var(--line);border-radius:12px;padding:14px;max-height:280px;overflow:auto;color:rgba(250,245,255,.85)}
+.mact{display:flex;flex-wrap:wrap;gap:10px}
+.copy,.ghost{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 18px;border-radius:999px;font-weight:600;font-size:.9rem;text-decoration:none}
+.copy{background:var(--violet);color:var(--night-2)}
+.ghost{border:1px solid var(--line)}
+.foot{border-top:1px solid var(--line);padding-block:24px;color:var(--mute);font-size:.84rem;text-align:center}
+
+/* celular */
+@media (max-width:980px){
+  .stage{grid-template-columns:minmax(0,1fr);padding-top:0;gap:8px}
+  .stage>.main{display:contents}
+  .player{border-radius:0;border:0;margin-inline:calc(-1 * max(16px,env(safe-area-inset-left,0px))) calc(-1 * max(16px,env(safe-area-inset-right,0px)))}
+  .player.stick{position:sticky;top:calc(env(safe-area-inset-top,0px) + 58px);z-index:40;box-shadow:0 18px 30px -18px rgba(0,0,0,.9)}
+  .side{position:static;padding-top:28px}
+  .matgrid{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:420px){
+  .item{grid-template-columns:96px minmax(0,1fr) auto}
+  .item img{width:96px;height:54px}
+  .bar{width:56px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header class="top gut">
+  <div class="in">
+    <a class="brand" href="#"><span class="sw" aria-hidden="true"></span><span>Piloto Automático</span></a>
+    <div class="prog"><span class="bar"><i id="barfill"></i></span><span id="progtxt">0 de 8</span></div>
+  </div>
+</header>
+
+<main>
+  <section class="stage gut">
+    <div class="main">
+      <div class="player" id="player"><video id="vid" controls playsinline preload="metadata"></video></div>
+      <div id="infos">
+<article class="info" data-lesson="aula-01" hidden>
+  <p class="eyebrow">Aula 01 · 6:34</p>
+  <h1>Boas-vindas</h1>
+  <p class="desc">O que dá para fazer no automático e as ferramentas: Claude Pro, extensão no Chrome, Flow e Gemini.</p>
+  <div class="acts"><button type="button" class="done" aria-pressed="false"><span class="ck" aria-hidden="true"></span><span class="lab">Marcar como assistida</span></button><button type="button" class="next">Próxima aula</button></div>
+  
+  <div class="tabs" role="tablist"><button type="button" role="tab" class="tab" data-tab="resumo" aria-selected="true">Resumo</button><button type="button" role="tab" class="tab" data-tab="trans" aria-selected="false">Transcrição</button></div><div class="pane" data-pane="resumo"><div class="prose"><h4>O que você vai aprender</h4><ul>
+<li>O que dá para fazer no <b>Piloto Automático</b>: novelinhas e clones de vídeos de referência</li>
+<li>Exemplos reais feitos só conversando com o Claude</li>
+<li>O que é o <b>Vigia</b> e por que o curso tem esse nome</li>
+<li>As ferramentas: <b>Claude Pro</b>, a <b>extensão do Claude no Chrome</b>, o <b>Google Flow</b> e o <b>Gemini</b></li>
+<li>Por que assinar o Claude <b>pelo computador</b></li>
+<li>O caminho grátis com o ChatGPT e o Gemini, sem o automático</li>
+</ul><h4>Em poucas palavras</h4><p>O Piloto Automático é deixar o Claude fazer o trabalho de produção: você dá o contexto (a ideia, o vídeo de referência, as suas fotos ou a sua voz) e ele cria o roteiro, gera as imagens e os vídeos no Google Flow e no Gemini e monta o vídeo final. Para isso você vai usar o <b>Claude Pro</b> (assinado pelo computador, que sai mais barato), a <b>extensão do Claude no Chrome</b>, o <b>Google Flow</b> e o <b>Gemini</b>. Sem plano pago, dá para fazer o mesmo processo com o ChatGPT e o Gemini grátis, só que na mão.</p>
+<ul class="check">
+<li>Entendi o que dá para fazer: novelinhas e clones de vídeos de referência</li>
+<li>Sei o que é o Vigia</li>
+<li>Tenho (ou vou assinar) o Claude Pro pelo computador</li>
+<li>Instalei a extensão do Claude no Chrome</li>
+<li>Tenho acesso ao Google Flow e ao Gemini</li>
+</ul></div></div><div class="pane" data-pane="trans" hidden><div class="prose trans"><p class="hint">Toque no minuto para o vídeo pular para aquele trecho.</p><p class="tl"><button class="ts" data-t="5" type="button">00:05</button><span>Sejam todos muito bem-vindos ao curso Piloto Automático. Esta é só uma aula de boas-vindas, para eu falar um pouco do que vamos ter aqui dentro e também me apresentar, para a gente ficar um pouquinho mais íntimo.</span></p>
+<p class="tl"><button class="ts" data-t="17" type="button">00:17</button><span>Prazer, meu nome é Augusto. Sou designer e estrategista há mais de oito anos e criei um sistema em que a gente consegue fazer vídeos de maneira automática, sem precisar colocar a mão: é só dar contexto. Beleza?</span></p>
+<p class="tl"><button class="ts" data-t="29" type="button">00:29</button><span>Vou mostrar agora algumas coisas que podemos fazer com essa fórmula do Piloto Automático. A gente pode fazer tanto novelinhas para o TikTok, o Instagram e o YouTube quanto clones com a sua imagem a partir de vídeos de terceiros. Você manda um vídeo de terceiros, ou um compilado de vídeos que acha interessantes, junta, compila e gera um roteiro. E, com esse roteiro, ou com esse clone de vídeo só que com a sua cara, você faz dezenas. O mundo é infinito.</span></p>
+<p class="tl"><button class="ts" data-t="59" type="button">00:59</button><span>Vou mostrar para vocês algumas novelinhas que eu já fiz.</span></p>
+<p><i>(Trecho da novelinha: "Um aviador caiu no meio do deserto, longe de tudo. Ao amanhecer...")</i></p>
+<p class="tl"><button class="ts" data-t="73" type="button">01:13</button><span>E o narrador também foi ele que fez. A história toda foi ele. Então essa é uma das coisas que a gente pode fazer. Outras coisas:</span></p>
+<p><i>(Trecho do vídeo: "A semana nem começou e já tem coisa atrasada e acumulada.")</i></p>
+<p>Motions também dá para fazer tranquilo. Outra referência de motion.</p>
+<p class="tl"><button class="ts" data-t="91" type="button">01:31</button><span>E aqui está a parte que eu mais gostei dessa inteligência, que é clonar criativos de terceiros. Dá uma olhada nesse aqui.</span></p>
+<p><i>(Trecho do vídeo: "Esse é o Augusto. O Augusto sempre teve muita ideia na cabeça, dá para perceber pelo tamanho. O problema é que entre a ideia e o resultado sempre tinha alguém no meio: o editor que sumia, o freelancer que cobrava por peça, a agência que marcava reunião para marcar reunião.")</i></p>
+<p class="tl"><button class="ts" data-t="114" type="button">01:54</button><span>Esse vídeo foi totalmente produzido com o Gemini. Eu não gastei nada além dele. E eu liguei o Vigia, que fica de olho em quando o crédito vai acabar e quando pode voltar. Vou deixar esse arquivo disponível para vocês. Eu mandei o vídeo, falei para ele extrair as referências, gerar o roteiro e gerar as imagens. Só coloquei algumas fotos minhas, e ele gerou tudo isso de maneira automática.</span></p>
+<p class="tl"><button class="ts" data-t="140" type="button">02:20</button><span>Por isso este curso se chama Piloto Automático: para você deixar o Claude trabalhando e seguir a sua vida, fazer outras coisas. Porque, conforme os dias passam, ele vai fazendo um vídeo, outro vídeo, outra imagem, e depois compila tudo e te manda um vídeo pronto.</span></p>
+<p class="tl"><button class="ts" data-t="156" type="button">02:36</button><span>Vou mostrar outra historinha para vocês.</span></p>
+<p><i>(Trecho da novelinha: "No Sítio do Picapau Amarelo, todo mundo sabia: redemoinho não vem sozinho. Lá dentro mora o Saci. E Pedrinho resolveu pegar o danado. Tio Barnabé ensinou: peneira no meio do vento. E não é que pegou?")</i></p>
+<p class="tl"><button class="ts" data-t="175" type="button">02:55</button><span>Olha que interessante. Aqui eu pedi para ele gerar um roteiro do Sítio do Picapau Amarelo em formato de origami, e ele fez esse resultado. Eu juro para vocês que não encostei em nada. Só pedi no chat do Claude e ele fez para mim. Gravei a minha voz no celular, só isso, e mandei o áudio para o Claude.</span></p>
+<p class="tl"><button class="ts" data-t="188" type="button">03:08</button><span>E tem uns detalhes. Por exemplo, nesse aqui eu usei o narrador da própria inteligência artificial. Nesse outro eu mesmo narrei: pedi o roteiro, falei que eu ia gravar, mandei a gravação e ele fez o vídeo em cima.</span></p>
+<p><i>(Trecho do vídeo: "Tá vendo esse vídeo? Eu pedi tudo numa conversa. Eu falo o que eu quero para o arquiteto dentro do meu Claude.")</i></p>
+<p class="tl"><button class="ts" data-t="206" type="button">03:26</button><span>Cara, aqui você vai aprender a desbloquear outro mundo. Você vai aprender a fazer os seus vídeos no automático. No fim do dia, você pega e posta. Ou deixa trabalhando à noite e, no dia seguinte de manhã, pega e posta, sem caô, sem tristeza, de maneira simples e fácil. Literalmente, não tem segredo: é só pedir, fazer e aproveitar. Fechou?</span></p>
+<p class="tl"><button class="ts" data-t="226" type="button">03:46</button><span>Estou aqui com o Miro e vou apresentar agora o que nós vamos usar: o Claude, a extensão do Claude no Chrome, o Google Flow e o Gemini. "Ah, Augusto, mas eu não tenho nada pago." Fique tranquilo. Você vai colocar um pouco mais a mão e não vai ser tão automático, mas consegue fazer tudo dentro do ChatGPT e do Gemini, de graça, tá?</span></p>
+<p class="tl"><button class="ts" data-t="248" type="button">04:08</button><span>Certo. O primeiro é o Claude, que todo mundo já deve conhecer. O que eu recomendo é o plano Pro. Você pode assinar mensalmente ou, se já tem, ótimo. Mas no mensal fica mais interessante. E o que eu aconselho: assine pelo computador. Se você assinar pelo celular ou pelo tablet, ele sai mais caro, por causa da taxa da loja onde o app está. Pelo computador é mais barato.</span></p>
+<p class="tl"><button class="ts" data-t="271" type="button">04:31</button><span>Show. A extensão do Claude: qual vai ser? Pesquise "Claude extensão" e baixe aqui. Eu já tenho, então não preciso baixar.</span></p>
+<p class="tl"><button class="ts" data-t="278" type="button">04:38</button><span>O ChatGPT todo mundo tem. E quem não tem, é só abrir: você não precisa ter conta para usar de graça. Só que, claro, vai ser limitado. Tem limite.</span></p>
+<p class="tl"><button class="ts" data-t="288" type="button">04:48</button><span>O próximo que a gente vai usar é o Google Flow. O Google Flow é basicamente o compilado das inteligências artificiais que o Google tem. O Google tem o Nano Banana, tem o Omni, tem o Flash, tem várias. E o Flow é onde elas ficam juntas, mais voltado para a criação de imagem e vídeo. Fechou?</span></p>
+<p class="tl"><button class="ts" data-t="308" type="button">05:08</button><span>Caso você não tenha o Google Flow assinado: ele faz parte do pacote Pro do Google. Se você já paga o Drive, automaticamente já tem. É simples, é igual a pagar o Drive e já ter o YouTube Premium Lite. É a mesma coisa.</span></p>
+<p class="tl"><button class="ts" data-t="321" type="button">05:21</button><span>E, se você já paga, também tem o Gemini, que a gente vai usar também. Aqui está mostrando que eu estourei o limite; mais para frente eu explico. Mas o que acontece? Os dois são plataformas que a gente vai usar de maneira integrada. Se você estourar o limite em um deles, como aqui no Google Flow, que foi o meu caso, você pode recorrer ao Gemini para gerar. E, se estourar o limite dele também, mais para frente eu explico o Vigia: você ativa o Vigia e, assim que o limite voltar, ele já começa automaticamente. O meu aqui volta às 9h48 de hoje.</span></p>
+<p class="tl"><button class="ts" data-t="352" type="button">05:52</button><span>Show! Então essas são as ferramentas que vamos usar. O ChatGPT eu não vou usar tanto; só quero mostrar que dá para fazer de graça com ele também. Tudo o que eu vou mostrar dentro do Claude dá para replicar nele. E, se quiser concentrar tudo no Gemini, também dá para replicar lá. Só que não vai ser automático, porque eles não conseguem fazer isso: você vai ter que fazer todo o processo na mão, o que é mais chato, e aí não vai ser o piloto automático, tá?</span></p>
+<p class="tl"><button class="ts" data-t="376" type="button">06:16</button><span>Beleza. Então eu já mostrei o plano do Claude, a extensão no Chrome, o Google Flow, o Gemini e a versão gratuita que dá para usar. A gente fica por aqui. Essa foi a aula de boas-vindas, para mostrar o que você já tem e você se preparar para a próxima aula. Falou!</span></p></div></div>
+</article>
+<article class="info" data-lesson="aula-02" hidden>
+  <p class="eyebrow">Aula 02 · 2:18</p>
+  <h1>Gastar menos crédito</h1>
+  <p class="desc">As seis regras da economia e o arquivo que ensina essas regras ao seu Claude.</p>
+  <div class="acts"><button type="button" class="done" aria-pressed="false"><span class="ck" aria-hidden="true"></span><span class="lab">Marcar como assistida</span></button><button type="button" class="next">Próxima aula</button></div>
+  <div class="mats"><span>Materiais desta aula</span><a class="mlink" href="#m-economia">Regras de economia de crédito</a></div>
+  <div class="tabs" role="tablist"><button type="button" role="tab" class="tab" data-tab="resumo" aria-selected="true">Resumo</button><button type="button" role="tab" class="tab" data-tab="trans" aria-selected="false">Transcrição</button></div><div class="pane" data-pane="resumo"><div class="prose"><h4>O que você vai aprender</h4><ul>
+<li>Como o <b>Flow</b> (créditos) e o <b>Gemini</b> (limite de uso) cobram</li>
+<li>As <b>seis regras da economia</b></li>
+<li>Por que testar a cena mais difícil primeiro, na menor qualidade</li>
+<li>O que fazer quando a geração dá erro, sem pagar duas vezes</li>
+<li>Como usar o arquivo <b>Regras de Economia de Crédito</b> no seu Claude</li>
+</ul><h4>Em poucas palavras</h4><p>Crédito e limite acabam rápido se você gerar sem método. Teste a cena mais difícil primeiro, na qualidade mais baixa; aprove o roteiro antes de gerar qualquer coisa; quando der erro, confira se o arquivo não foi criado antes de pedir de novo; repita o mesmo bloco de estilo em todos os pedidos; e, quando o crédito do Flow acabar, continue no Gemini. Em vez de repetir tudo isso a cada conversa, coloque o arquivo <b>01 - Regras de Economia de Credito.md</b> no seu Claude.</p>
+<ul class="check">
+<li>Sei como o Flow e o Gemini cobram</li>
+<li>Testo a cena mais difícil primeiro, na menor qualidade</li>
+<li>Só gero depois de aprovar o roteiro</li>
+<li>Confiro antes de pedir de novo quando dá erro</li>
+<li>Coloquei o arquivo de Regras de Economia no meu Claude</li>
+</ul></div></div><div class="pane" data-pane="trans" hidden><div class="prose trans"><p class="hint">Toque no minuto para o vídeo pular para aquele trecho.</p><p class="tl"><button class="ts" data-t="5" type="button">00:05</button><span>Certo, rapaziada. Eu já mostrei o que a gente vai usar, e agora quero mostrar um passo importante: como gastar menos créditos nas IAs, para não estourar o limite rápido. Mesmo tendo o plano pago do Google Flow, que é por créditos, e o do Gemini, que é por pedidos em um determinado período, você estoura os dois. Então existe um jeito certo de orientar o seu Claude para não estourar, tá?</span></p>
+<p class="tl"><button class="ts" data-t="30" type="button">00:30</button><span>E quais são as regras? Essas aqui: as seis regras da economia.</span></p>
+<p class="tl"><button class="ts" data-t="34" type="button">00:34</button><span><b>1. Teste a cena mais difícil primeiro, na qualidade mais baixa.</b> Você pede isso para o seu Claude. Com isso, ele faz uma versão de baixa qualidade, para gastar menos crédito. E, se você aprovar essa versão, o resto já é feito logo em seguida.</span></p>
+<p class="tl"><button class="ts" data-t="47" type="button">00:47</button><span><b>2. Roteiro aprovado antes de gerar.</b> Outra coisa importante, que eu vou mostrar mais para frente: faça o roteiro antes de gerar qualquer imagem ou qualquer vídeo. Você tem que ter definido o que quer, porque aí, em um pedido só, já consegue um resultado melhor.</span></p>
+<p class="tl"><button class="ts" data-t="57" type="button">00:57</button><span><b>3. Deu erro? Confira antes de pedir de novo.</b> Você fez uma imagem e deu errado, ou pediu e travou. Veja por que travou, para não ter que pedir de novo e travar de novo. Fique atento a isso. Fechou?</span></p>
+<p class="tl"><button class="ts" data-t="69" type="button">01:09</button><span><b>4. Mesmo bloco de estilo em todo pedido.</b> Você precisa de uma constância visual no que pedir. Se não, seja para clonar vídeos ou para fazer novelinhas, não vai dar. Vai ficar tudo cagado. Então essa é uma etapa importante também.</span></p>
+<p class="tl"><button class="ts" data-t="83" type="button">01:23</button><span><b>5. Acabou o crédito do Flow? Vá para o Gemini.</b> Eu recomendo usar o Flow e, se acabar, partir para o Gemini. O Flow trabalha de um jeito mais interessante: lá você faz imagens de graça, então o que gasta mesmo são os vídeos. Imagem dá para fazer quase infinito. Mas, se acabar, vai para o Gemini.</span></p>
+<p class="tl"><button class="ts" data-t="104" type="button">01:44</button><span><b>6. Ensine isso ao Claude.</b> Você não precisa pegar tudo o que eu acabei de falar e mandar para ele. Por quê? Porque eu fiz um arquivo .md, que é esse aqui. É só colocar no seu Claude que você já consegue fazer essas economias. Vou deixar esse arquivo disponível, junto com todos os outros que vou mostrar mais para frente, para você gastar menos crédito e fazer mais coisas, tá?</span></p>
+<p class="tl"><button class="ts" data-t="128" type="button">02:08</button><span>Show! Então é isso que eu queria mostrar neste módulo de como gastar menos crédito. Nos vemos na próxima. Falou!</span></p></div></div>
+</article>
+<article class="info" data-lesson="aula-03" hidden>
+  <p class="eyebrow">Aula 03 · 6:11</p>
+  <h1>Novelinha no TikTok</h1>
+  <p class="desc">Roteiro, character sheet, cenário, geração no Flow e no Gemini, e o Vigia.</p>
+  <div class="acts"><button type="button" class="done" aria-pressed="false"><span class="ck" aria-hidden="true"></span><span class="lab">Marcar como assistida</span></button><button type="button" class="next">Próxima aula</button></div>
+  <div class="mats"><span>Materiais desta aula</span><a class="mlink" href="#m-novelinha">Prompt da novelinha</a><a class="mlink" href="#m-vigia">Pedido do Vigia</a><a class="mlink" href="#m-skill">Skill Tira-Dúvidas</a></div>
+  <div class="tabs" role="tablist"><button type="button" role="tab" class="tab" data-tab="resumo" aria-selected="true">Resumo</button><button type="button" role="tab" class="tab" data-tab="trans" aria-selected="false">Transcrição</button></div><div class="pane" data-pane="resumo"><div class="prose"><h4>O que você vai aprender</h4><ul>
+<li>Como montar o <b>roteiro</b> e definir as cenas: tempo, formato e falas</li>
+<li>O que é o <b>character sheet</b> e por que ele mantém os personagens iguais</li>
+<li>Como pedir o <b>cenário</b></li>
+<li>Como pedir a geração no <b>Flow</b> e continuar no <b>Gemini</b></li>
+<li>Para que serve o <b>Vigia</b></li>
+<li>Como acompanhar tudo <b>pelo celular</b></li>
+</ul><h4>Em poucas palavras</h4><p>A novelinha sai em cinco passos, todos pedidos ao Claude: (1) o <b>roteiro</b>, com as cenas definidas (tempo, formato e falas); (2) os <b>personagens</b>, cada um com o seu <b>character sheet</b>, para não mudar de uma cena para outra; (3) o <b>cenário</b>, os fundos de cada cena; (4) a <b>geração</b> no Flow, continuando no Gemini quando o crédito acabar; e (5) o <b>Vigia</b>, que espera o limite voltar e continua sozinho. O arquivo <b>02 - Prompt da Novelinha.md</b> já traz tudo isso pronto para você preencher com a sua ideia. O vídeo complementar "Vídeos automáticos com o Flow" mostra o processo inteiro na prática.</p>
+<ul class="check">
+<li>Escrevi a minha ideia de novelinha</li>
+<li>Defini tempo, formato e falas de cada cena</li>
+<li>Pedi o character sheet de cada personagem</li>
+<li>Pedi os cenários</li>
+<li>Pedi a geração no Flow (e no Gemini, se acabar o crédito)</li>
+<li>Liguei o Vigia</li>
+<li>Assisti ao vídeo complementar do passo a passo</li>
+</ul></div></div><div class="pane" data-pane="trans" hidden><div class="prose trans"><p class="hint">Toque no minuto para o vídeo pular para aquele trecho.</p><p class="tl"><button class="ts" data-t="5" type="button">00:05</button><span>Beleza. Agora vou mostrar como vocês vão pedir para fazer todo o passo a passo. Esse é um passo a passo para casa, para vocês pegarem e fazerem, porque, se não fizerem, não vão conseguir entender e absorver tudo, tá? São alguns passos. Quais são?</span></p>
+<p class="tl"><button class="ts" data-t="23" type="button">00:23</button><span><b>Passo 1: o roteiro.</b> Antes de tudo, você vai ter que criar o seu roteiro. Jogue a sua ideia, o que você quer fazer. Por exemplo: "Eu quero fazer uma novela para o TikTok em que o Limão e a Moranguete estão brigados, porque o Limão é azedo demais e a Moranguete é doce. Quero uma trama de quatro episódios de 30 segundos, em que eles brigam, no final se resolvem e depois se divorciam." Tipo assim.</span></p>
+<p class="tl"><button class="ts" data-t="46" type="button">00:46</button><span>Certo. Para gerar esses roteiros, você tem algumas maneiras. Pode comprar alguma skill que gera roteiros ou buscar skills de roteiro, porque com elas você faz algo muito fora do padrão e mais assertivo. Eu recomendo a do curso da Isa, que vocês já devem conhecer. Se não tiverem, podem buscar na internet algumas skills de criação de roteiro. E, se não quiserem, não tem problema: o Claude consegue fazer o roteiro, tá?</span></p>
+<p class="tl"><button class="ts" data-t="75" type="button">01:15</button><span>E, antes de fazer qualquer coisa, vocês têm que definir as cenas, que é um pouco do que eu falei. Quanto tempo vai ter cada episódio? Não sabe? Então joga para ele decidir para você. O formato: vai ser horizontal, para o YouTube? Vai ser vertical? Se for novelinha, possivelmente vertical. E as falas: nos vídeos que eu mostrei, eu usei narrador de fundo; os personagens não têm fala, só o narrador. Então você tem que definir isso também. Vai ter narrador? O narrador vai ser a IA ou vai ser você? Se for a IA, você tem que comentar. E, se cada personagem tiver fala, você tem que dizer também, beleza?</span></p>
+<p class="tl"><button class="ts" data-t="108" type="button">01:48</button><span>Eu vou mandar um arquivo que facilita, que é esse aqui, que te ajuda a fazer a novelinha. Você manda, fala um pouco da sua ideia, e ele já consegue gerar. Já tem os formatos, já tem tudo. Bem tranquilo de usar. Certo.</span></p>
+<p class="tl"><button class="ts" data-t="122" type="button">02:02</button><span>Depois, o que você vai ter que fazer? Você não precisa saber nada disso, é só seguir esse passo a passo que eu estou te falando.</span></p>
+<p class="tl"><button class="ts" data-t="128" type="button">02:08</button><span><b>Passo 2: os personagens.</b> Depois de gerar o roteiro, você vai gerar os personagens, tá? Você já tem o texto do roteiro e agora vai criar como cada personagem vai ser, as características de cada um. É isso que o character sheet faz. O character sheet é basicamente uma cartela com o seu personagem, seja pessoa ou objeto, visto de vários ângulos. Nele você diz se é fictício ou se é o seu clone. Se for o seu clone, você manda a sua foto. Se for fictício, ele gera. E aí todas as cenas ficam mais fiéis ao personagem do character sheet, certo?</span></p>
+<p class="tl"><button class="ts" data-t="157" type="button">02:37</button><span>Deu para entender? O character sheet é uma cartela do seu personagem para manter todo o padrão dele, para não ter variação. Para não ficar uma Moranguete verde e depois uma Moranguete roxa, por exemplo, ou sem os detalhes. É isso que o character sheet garante, beleza? Então: você pediu o roteiro, depois pediu os personagens e pediu o character sheet de cada personagem, beleza?</span></p>
+<p class="tl"><button class="ts" data-t="175" type="button">02:55</button><span>Isso tudo lá dentro do nosso Claude. Para fazer isso, você já vai ter que ter instalado a extensão, e vai pedir para ele fazer o character sheet lá dentro do Flow, beleza?</span></p>
+<p class="tl"><button class="ts" data-t="187" type="button">03:07</button><span><b>Passo 3: o cenário.</b> A gente fez o roteiro, fez os personagens, e agora tem que criar o cenário, que são os fundos. O cenário é criado com base no roteiro que você fez, então toda a inteligência está nele. É só para a gente garantir que o cenário não varie tanto e fique da melhor maneira possível.</span></p>
+<p class="tl"><button class="ts" data-t="204" type="button">03:24</button><span>Então, beleza: a gente gerou o roteiro, gerou os personagens, e aqui você já conectou a extensão. Conectar é bem simples. Se tiver alguma dúvida, vou deixar uma skill tira-dúvidas: você só coloca dentro do seu Claude e ela tira todas essas dúvidas. Mas aqui não tem erro, é só seguir esse passo a passo.</span></p>
+<p class="tl"><button class="ts" data-t="219" type="button">03:39</button><span><b>Passo 4: pedir a criação.</b> Depois, você vai pedir lá dentro: usar o Flow e, se acabar, gerar no Gemini. Eu gosto do Flow porque lá tem o Omni, tem o Veo 3, e fica mais top, como naquele exemplo do Pequeno Príncipe, que ficou muito top. Já o Gemini demora mais, porque tem um limite de uso.</span></p>
+<p class="tl"><button class="ts" data-t="236" type="button">03:56</button><span>Então a gente gerou os roteiros, depois os personagens, depois o cenário, e pediu para criar tudo lá dentro.</span></p>
+<p class="tl"><button class="ts" data-t="242" type="button">04:02</button><span><b>Passo 5: o Vigia.</b> Depois de pedir tudo, se você estiver com o Gemini grátis, que pode ser o caso, às vezes ele trava. Por isso você tem que ativar o Vigia. O Vigia fica sempre rodando: quando trava, ele espera e continua depois que os seus créditos voltam. Pode ficar tranquilo, que o papai Augusto aqui está cuidando de vocês. Vou deixar um arquivo .md para isso, que é o Pedido do Vigia, para ele ficar sempre de olho no Gemini e, se acabar, voltar a fazer automaticamente. Fechou?</span></p>
+<p class="tl"><button class="ts" data-t="272" type="button">04:32</button><span>E, para vocês verem esse processo completo, comigo destrinchando tudo, vou deixar um vídeo que eu já gravei, que é basicamente esse passo a passo completinho, sem erro, sem caô. Fechou? Então, beleza.</span></p>
+<p class="tl"><button class="ts" data-t="284" type="button">04:44</button><span>Esse foi o exemplo de como fazer novelinha para o TikTok. Você viu que não é difícil. Basicamente, você gera o roteiro, o cenário e os personagens, e aí fala: "Vai, Claude, faça a sua mágica. Vai lá no Google Flow, vai lá no Gemini e faz tudo o que eu te pedi." Ele já faz automático e você esquece. Vai dormir, vai viver o seu dia, que, quando acabar, fica pronto.</span></p>
+<p class="tl"><button class="ts" data-t="305" type="button">05:05</button><span>E, sério, essa é a maneira mais barata que eu encontrei de fazer novelinha, sem precisar pagar plano caro no Higgsfield ou no Magnific, nem pagar uma plataforma só de vídeo, como Seedream, Seedance, Kling ou qualquer outra. É a maneira mais barata que eu encontrei de ensinar vocês a fazer isso.</span></p>
+<p class="tl"><button class="ts" data-t="325" type="button">05:25</button><span>Por isso se chama Piloto Automático. Os primeiros passos, de definir tudo, vão ser chatos. Mas, depois que você definiu tudo, larga de mão e vai dormir. Se quiser, coloca o Claude no seu celular e ativa o Remote Control. Aí você vê e controla tudo pelo celular e, no outro dia, pega o trem pronto, beleza?</span></p>
+<p class="tl"><button class="ts" data-t="342" type="button">05:42</button><span>Então é isso, espero que vocês tenham gostado. Vejam o vídeo do YouTube que vou deixar aqui de complemento. Ele é bem intuitivo e mostra o passo a passo de como eu fiz, e as minhas reações quando vi a do Saci, que ficou bem interessante, tá? Na próxima aula eu vou mostrar como fazer a clonagem de vídeo, que é um pouco parecida com esta, só que tem uns detalhes a mais. Então, falou, fiquem com Deus e até a próxima aula.</span></p></div></div>
+</article>
+<article class="info" data-lesson="complemento" hidden>
+  <p class="eyebrow">Complemento · 12:47</p>
+  <h1>Vídeos automáticos com o Flow</h1>
+  <p class="desc">O passo a passo completo de uma novelinha, do pedido ao vídeo final, sem cortes no processo.</p>
+  <div class="acts"><button type="button" class="done" aria-pressed="false"><span class="ck" aria-hidden="true"></span><span class="lab">Marcar como assistida</span></button><button type="button" class="next">Próxima aula</button></div>
+  <div class="mats"><span>Materiais desta aula</span><a class="mlink" href="#m-novelinha">Prompt da novelinha</a><a class="mlink" href="#m-vigia">Pedido do Vigia</a></div>
+  
+</article>
+<article class="info" data-lesson="aula-04" hidden>
+  <p class="eyebrow">Aula 04 · 7:29</p>
+  <h1>Clonagem de vídeos</h1>
+  <p class="desc">Como pegar um vídeo que já funciona, extrair a estrutura e fazer a sua versão com o seu rosto e a sua voz.</p>
+  <div class="acts"><button type="button" class="done" aria-pressed="false"><span class="ck" aria-hidden="true"></span><span class="lab">Marcar como assistida</span></button><button type="button" class="next">Próxima aula</button></div>
+  <div class="mats"><span>Materiais desta aula</span><a class="mlink" href="#m-clonagem">Prompt da clonagem de vídeo</a><a class="mlink" href="#m-vigia">Pedido do Vigia</a></div>
+  <div class="tabs" role="tablist"><button type="button" role="tab" class="tab" data-tab="resumo" aria-selected="true">Resumo</button><button type="button" role="tab" class="tab" data-tab="trans" aria-selected="false">Transcrição</button></div><div class="pane" data-pane="resumo"><div class="prose"><h4>O que você vai aprender</h4><ul>
+<li>Como <b>escolher e encaminhar</b> o vídeo de referência</li>
+<li>O que pedir para o Claude <b>extrair</b>: cenas, textos, imagens e narração</li>
+<li>Como gerar o <b>roteiro</b> com a mesma estrutura</li>
+<li>Como montar a <b>pasta de fotos</b> para o seu clone</li>
+<li>Como pedir a <b>geração</b> e ligar o <b>Vigia</b></li>
+<li>Como produzir vários vídeos em sequência e acompanhar <b>pelo celular</b></li>
+</ul><h4>Em poucas palavras</h4><p>Clonar um vídeo é aproveitar a estrutura de algo que já funciona: (1) escolha a referência e mande o link ou o arquivo para o Claude extrair as cenas, os textos, as imagens e a narração; (2) gere o roteiro com a mesma estrutura, definindo tempo, formato e falas; (3) monte a pasta com as suas fotos para o character sheet; (4) peça a geração no Flow ou no Gemini; e (5) ligue o Vigia se for usar o Gemini. Não espere um vídeo terminar para pedir o próximo, e ajuste o primeiro com cuidado: os seguintes já saem melhores. O arquivo <b>03 - Prompt da Clonagem de Video.md</b> traz o pedido pronto.</p>
+<ul class="check">
+<li>Escolhi o vídeo de referência</li>
+<li>Pedi para extrair cenas, textos, imagens e narração</li>
+<li>Gerei o roteiro com a mesma estrutura</li>
+<li>Montei a pasta com as minhas fotos</li>
+<li>Pedi a geração e liguei o Vigia</li>
+<li>Ajustei o primeiro vídeo antes de seguir para os próximos</li>
+</ul></div></div><div class="pane" data-pane="trans" hidden><div class="prose trans"><p class="hint">Toque no minuto para o vídeo pular para aquele trecho.</p><p class="tl"><button class="ts" data-t="5" type="button">00:05</button><span>Beleza. Você já entendeu um pouco do processo de como a gente pede para fazer as coisas lá dentro do Google Flow ou do Gemini, correto? Depois que você ativou a extensão do Claude no Google Chrome, você só pede, e ele entra e mexe como se fosse um humano mesmo: gera um mousezinho, vai clicando nas coisas e vai pedindo. Você já entendeu esse processo.</span></p>
+<p class="tl"><button class="ts" data-t="29" type="button">00:29</button><span>Agora a gente vai entrar na parte de clonagem dos vídeos. Como a gente faz a clonagem? O processo é parecido com o da novelinha, só que tem alguns detalhes diferentes. De resto, é bem parecido mesmo.</span></p>
+<p class="tl"><button class="ts" data-t="42" type="button">00:42</button><span><b>Passo 1: encaminhar o vídeo.</b> A primeira coisa que a gente precisa fazer é encaminhar o vídeo. E como você faz isso? Você simplesmente pega um vídeo do que você quer fazer. Vou até abrir aqui para vocês: esse é o do cabeção que eu fiz, vocês viram. Eu peguei essa base de referência; o roteiro e a copy são bem parecidos, e eu usei esse vídeo de referência.</span></p>
+<p class="tl"><button class="ts" data-t="63" type="button">01:03</button><span>Aqui vou mostrar outro vídeo de referência. Esse eu ainda estou produzindo: é o que mostra uma gama de produtos que vai aparecendo. Esse outro é um vídeo que eu já mostrei para vocês: peguei essa base de referência e pedi para ele fazer em cima. A mesma coisa nesse outro: esse vídeo eu cheguei a produzir.</span></p>
+<p class="tl"><button class="ts" data-t="80" type="button">01:20</button><span>Então o primeiro passo é fazer essa busca de referência do vídeo que vocês querem fazer, beleza? Você pega o vídeo e encaminha para dentro do Claude, pode ser o link mesmo, e pede para extrair as informações. Quais informações? As cenas, os textos, as imagens e a narração, se tiver narração.</span></p>
+<p class="tl"><button class="ts" data-t="99" type="button">01:39</button><span><b>Passo 2: o roteiro.</b> Com todo esse compilado de informações, a gente vai pedir para gerar o roteiro. Como eu comentei, você pode fazer direto no Claude ou colocar uma skill sua: uma skill paga, e eu recomendo a da Isa, que vocês já devem conhecer; uma skill que você comprou ou buscou avulsa; ou uma skill que você mesmo fez para gerar roteiros, se já estiver mais avançado.</span></p>
+<p class="tl"><button class="ts" data-t="122" type="button">02:02</button><span>Então, beleza: chamando essas skills, você vai pedir os mesmos processos da geração de roteiro: tempo, formato e fala. A fala vai ser de narrador ou cada personagem vai falar? Isso você tem que definir também. Se o vídeo que você pegou for só motion, é só pedir, que não precisa de texto nenhum. Mas, se tiver narrador, ou você grava ou pede para ele fazer. O Gemini consegue fazer, é tranquilo. Mas, se você gravar, fica mais pessoal, mais seu.</span></p>
+<p class="tl"><button class="ts" data-t="153" type="button">02:33</button><span>Essa definição de cena, tempo e formato é basicamente igual à que a gente mostrou na novelinha. Então, se você entendeu e pegou as manhas, é só repetir.</span></p>
+<p class="tl"><button class="ts" data-t="161" type="button">02:41</button><span>E lembrando, eu sempre falo: imagem e vídeo é teste. Você vai gastar crédito? Vai. Mas, quando acertar, vai criar algo que fica surreal. Então não adianta ficar triste se não deu certo de primeira. É como eu ensinei sobre reduzir os custos: não deu certo, tenta melhorar e pede de novo, que aí possivelmente vai dar melhor, beleza?</span></p>
+<p class="tl"><button class="ts" data-t="182" type="button">03:02</button><span>Então, show! A gente extraiu as informações do vídeo, gerou os textos e os roteiros, gerou o que precisa nessa parte.</span></p>
+<p class="tl"><button class="ts" data-t="191" type="button">03:11</button><span><b>Passo 3: a pasta de fotos.</b> Se for fazer um clone seu ou de outra pessoa, como eu fiz com o meu, você tem que montar a sua pasta de fotos, que é o que vai fazer a mágica toda acontecer. É com essas fotos que ele vai fazer o character sheet que eu já mostrei para vocês, e manter a cara da sua imagem para não errar. Então você tem que anexar no Claude uma pasta com fotos suas.</span></p>
+<p class="tl"><button class="ts" data-t="214" type="button">03:34</button><span>Ou, se não quiser criar uma pasta, dá para fazer do jeito mais preguiçoso. Qual é? Você manda as imagens para ele e fala: "Claude, aqui estão as minhas imagens, salva numa pasta. Agora eu quero que você crie o character sheet delas. Se precisar melhorar as imagens, peça para o Gemini melhorar." E você vai desenrolando com o Claude, não tem segredo. Clone seu, foto sua; clone de outra pessoa, foto da outra pessoa. Mas você precisa ter as fotos, senão não vai conseguir. Show?</span></p>
+<p class="tl"><button class="ts" data-t="239" type="button">03:59</button><span><b>Passo 4: pedir a criação.</b> Agora você faz o pedido. Fala assim: "Claude, beleza. Eu já extraí todas as informações do vídeo que eu quero fazer, já gerei o roteiro, que você vai seguir, e já criei o meu character sheet com as minhas fotos. Agora é com você, meu amigo: chega lá, solta a braba no Flow, solta a braba no Gemini e gera tudo o que eu quero." E aí vai dormir, porque demora um pouquinho até gerar todas as cenas. Se tiver crédito no Flow, não demora, é rapidinho, porque ele é por crédito, não por limite como o Gemini. Mas, se for no Gemini, demora um pouco, tá? Então vai dormir e no outro dia você pega pronto.</span></p>
+<p class="tl"><button class="ts" data-t="274" type="button">04:34</button><span><b>Passo 5: o Vigia.</b> E aí vem a parte do Vigia, que você tem que colocar se for usar o Gemini. Ele fica sempre de olho em quando o limite do seu Gemini volta, para prosseguir e criar 100% no automático, tá? Eu até coloquei uma breve explicação: o Vigia é o Claude esperando por você. Quando a geração chega no limite e o limite volta, ele continua sozinho. Ele é tipo o seu amigo lá dentro, que fica olhando, literalmente vigiando, para que tudo saia como você pediu.</span></p>
+<p class="tl"><button class="ts" data-t="302" type="button">05:02</button><span>E aqui vai um detalhe para vocês. Você fez uma imagem e pediu para fazer o vídeo. Você não precisa esperar o vídeo ficar pronto para pedir outro. Quanto mais você gera e usa, mais inteligente e mais assertivo ele fica. Então, pediu um vídeo, já pode dar sequência no segundo pedido, no terceiro pedido.</span></p>
+<p class="tl"><button class="ts" data-t="323" type="button">05:23</button><span>No meu caso, o que eu fiz? Mandei quatro vídeos e pedi para ele extrair todas as informações. Depois pedi o roteiro e, com o roteiro, pedi as falas de uma vez. Eu já tinha gravado todas as falas e mandado para ele, então já tinha as quatro falas prontas, que eu narrei. Aí era só com ele: fui pedindo o 1; quando ficou pronto, ele começou o 2; depois o 3; depois o 4.</span></p>
+<p class="tl"><button class="ts" data-t="350" type="button">05:50</button><span>Só que não é tão simples assim. É simples, mas não é. Por quê? Porque, depois que gera o 1, ele pergunta se você gostou, se quer fazer ajuste ou não. Se quiser, é só comentar o que precisa, porque ele já fica um pouco mais inteligente e não comete o mesmo erro nos próximos. Aí você consegue uma linha de produção de criativos muito boa, que vai ficando cada vez mais inteligente, guardando na memória o que precisa ser feito e as características de que você gosta, e ele dá sequência. Show?</span></p>
+<p class="tl"><button class="ts" data-t="376" type="button">06:16</button><span>Então foi isso que eu fiz: gerei o roteiro, extraí todas as informações, gravei as falas e fui dando sequência. "Ó, estão aí os meus áudios. Assim que for acabando e eu for aprovando, você vai gerando o próximo, que eu não vou gravar mais nada, já estou até sem voz." E pronto: fui dormir, voltei, e o vídeo estava pronto.</span></p>
+<p class="tl"><button class="ts" data-t="390" type="button">06:30</button><span>Como eu coloquei o Remote Control, que é basicamente um assistente para você acompanhar pelo celular (você também tem que baixar o Claude no celular), eu consigo controlar toda a interface do meu Claude pelo telefone. Fica bem tranquilo. Estou lá deitado com a minha esposa, na cama, soninho chegando, olho o telefone: "Seu vídeo ficou pronto, toma aqui uma prévia." Abro o telefone, vejo como ficou, já peço o próximo e vou dormir. E aí, pau na máquina: fica 100% redondinho.</span></p>
+<p class="tl"><button class="ts" data-t="418" type="button">06:58</button><span>Então é basicamente isso: é só vocês seguirem todo o processo. Se tiverem dúvida, vou colocar um vídeo, como comentei na aula da novelinha, em que eu mostro de fato criando, e é basicamente a mesma coisa. Você abre o Claude e vai desenvolvendo, só seguindo a ordem que eu te mostrei aqui, que aí vai conseguir extrair a melhor informação, tá? Fechou? Então é isso. Nos vemos na próxima aula, que vai ser bem tranquila, bem rapidinha. Falou!</span></p></div></div>
+</article>
+<article class="info" data-lesson="aula-05" hidden>
+  <p class="eyebrow">Aula 05 · 2:02</p>
+  <h1>Ajustes necessários</h1>
+  <p class="desc">Trilha alta, legenda em uma linha e o ajuste fino que só o seu olhar faz.</p>
+  <div class="acts"><button type="button" class="done" aria-pressed="false"><span class="ck" aria-hidden="true"></span><span class="lab">Marcar como assistida</span></button><button type="button" class="next">Próxima aula</button></div>
+  
+  <div class="tabs" role="tablist"><button type="button" role="tab" class="tab" data-tab="resumo" aria-selected="true">Resumo</button><button type="button" role="tab" class="tab" data-tab="trans" aria-selected="false">Transcrição</button></div><div class="pane" data-pane="resumo"><div class="prose"><h4>O que você vai aprender</h4><ul>
+<li>Como conferir a <b>trilha</b> que ficou alta</li>
+<li>Como ouvir o vídeo quando você acompanha <b>pelo celular</b></li>
+<li>Deixar a <b>legenda em uma linha só</b></li>
+<li>Quando pedir para <b>refazer</b> um vídeo</li>
+<li>O <b>ajuste fino</b>: o seu olhar de criador</li>
+</ul><h4>Em poucas palavras</h4><p>A primeira versão quase nunca é a final. Confira se a trilha não ficou alta (o Claude não ouve o áudio, e pelo celular você só vê o vídeo: peça para ele subir o arquivo no Drive ou em outro lugar para escutar), peça a legenda em uma linha só e refaça o que não ficou bom. O ajuste fino é seu: se algo te incomodou na primeira vez, vai incomodar mais gente. Na dúvida, mostre para alguém bem crítico antes de publicar.</p>
+<ul class="check">
+<li>Conferi o volume da trilha</li>
+<li>Deixei a legenda em uma linha só</li>
+<li>Refiz o que não ficou bom</li>
+<li>Assisti com o meu olhar de criador</li>
+<li>Mostrei para alguém crítico antes de publicar</li>
+</ul></div></div><div class="pane" data-pane="trans" hidden><div class="prose trans"><p class="hint">Toque no minuto para o vídeo pular para aquele trecho.</p><p class="tl"><button class="ts" data-t="5" type="button">00:05</button><span>Olá a todos! Chegamos à nossa última aulinha. É uma aula bem tranquila, que eu já até comentei um pouco na aula passada: os ajustes. Como você pede os ajustes? O que mais pode dar errado?</span></p>
+<p class="tl"><button class="ts" data-t="18" type="button">00:18</button><span><b>Ajuste 1: a trilha alta.</b> O Claude às vezes deixa o som da trilha de fundo um pouco alto. Quando ele gerar o vídeo, faça essa checagem no celular, como eu comentei. O ruim é que você não consegue escutar o vídeo que ele te mandar, a não ser que peça para ele subir no Drive, no GitHub ou em outro lugar.</span></p>
+<p class="tl"><button class="ts" data-t="34" type="button">00:34</button><span><b>Ajuste 2: a legenda em uma linha.</b> Depois disso, tem uns ajustes de característica mesmo, que eu coloquei aqui: deixar a legenda em uma linha só, para não ficar aquelas duas linhas grotescas, que às vezes ficam meio paia.</span></p>
+<p class="tl"><button class="ts" data-t="45" type="button">00:45</button><span><b>Ajuste 3: refazer o que não ficou bom.</b> Às vezes um vídeo que você gerou não ficou interessante, então você tem que pedir de novo para ele fazer.</span></p>
+<p class="tl"><button class="ts" data-t="50" type="button">00:50</button><span><b>Ajuste 4: o ajuste fino.</b> E esse último passo é aquele ajuste fino que nenhuma IA vai conseguir fazer, só o seu olhar. O seu olhar de criador daquele produto, daquele vídeo. O seu olhar do que te incomoda. E eu gosto de falar o seguinte: se você olhou a primeira vez e te incomodou, mais pessoas vão ficar incomodadas com aquilo. Então você tem que ter um pouco desse senso, um senso de criatividade, e às vezes isso é o necessário.</span></p>
+<p class="tl"><button class="ts" data-t="74" type="button">01:14</button><span>Se você não tem, peça para um amigo, para a sua mãe. A sua mãe com certeza é bem crítica. A minha é: se eu mandar para ela, com certeza ela acha defeito em qualquer coisa. Então pode pedir para a sua mãe ou para a sua esposa, que gosta de bajular ou de destroçar mesmo.</span></p>
+<p class="tl"><button class="ts" data-t="90" type="button">01:30</button><span>Mas esses ajustes finos são necessários, tá? Não é só gerar e pronto. Dá, mas vai ficar uma coisa ou outra para trás, um detalhezinho que, quando você vê, fala: "Nossa Senhora, por que eu não editei isso antes?" Então esses ajustes finos são necessários, tá bom?</span></p>
+<p class="tl"><button class="ts" data-t="104" type="button">01:44</button><span>E é isso, rapaziada, chegamos ao fim. Espero que vocês tenham gostado. Foi um cursinho bem top. Vai aparecer várias coisas na tela, porque todo este curso foi editado com o Claude, e vocês vão ver como ficou. Então é isso, encerramos por aqui. Falou!</span></p></div></div>
+</article>
+<article class="info" data-lesson="bonus" hidden>
+  <p class="eyebrow">Bônus · 1:21</p>
+  <h1>Central de Posts: apresentação</h1>
+  <p class="desc">Um link só para baixar cada vídeo e copiar a legenda na hora de postar.</p>
+  <div class="acts"><button type="button" class="done" aria-pressed="false"><span class="ck" aria-hidden="true"></span><span class="lab">Marcar como assistida</span></button><button type="button" class="next">Próxima aula</button></div>
+  
+  <div class="tabs" role="tablist"><button type="button" role="tab" class="tab" data-tab="resumo" aria-selected="true">Resumo</button><button type="button" role="tab" class="tab" data-tab="trans" aria-selected="false">Transcrição</button></div><div class="pane" data-pane="resumo"><div class="prose"><h4>O que você vai aprender</h4><ul>
+<li>O que é a <b>Central de Posts</b></li>
+<li>Como pedir a sua para o Claude</li>
+<li>Como postar com <b>um clique para baixar</b> e <b>um clique para copiar</b> a legenda</li>
+</ul><h4>Em poucas palavras</h4><p>Depois de produzir muitos vídeos, organizar a postagem vira o gargalo. A Central de Posts é uma página em um link só, criada pelo Claude, em que cada vídeo tem o botão de baixar e a legenda com o botão de copiar. A aula completa da Central de Posts vem logo a seguir.</p>
+<ul class="check">
+<li>Entendi o que é a Central de Posts</li>
+<li>Assisti à aula completa da Central de Posts</li>
+</ul></div></div><div class="pane" data-pane="trans" hidden><div class="prose trans"><p class="hint">Toque no minuto para o vídeo pular para aquele trecho.</p><p class="tl"><button class="ts" data-t="5" type="button">00:05</button><span>Você acha mesmo que eu não ia te dar um bônus, um presente, um agradinho no seu coração? Se enganou. Por quê? Porque agora você é um criador nato. Você sabe fazer vários vídeos, está tudo ali no seu computador, e você não quer ficar louco, porque tem tanto vídeo e tanta coisa interessante que você fez que é um saco ter que pegar o vídeo, mandar no WhatsApp, pegar a legenda, mandar no WhatsApp e ficar aquela bagunça toda.</span></p>
+<p class="tl"><button class="ts" data-t="33" type="button">00:33</button><span>Então aqui, meu amigo, eu vou te apresentar a Central de Posts, e vou colocar um vídeo para vocês darem uma olhada. O que é a Central de Posts? É a organização inteira do seu produto. Você pega tudo o que fez e fala: "Claude, resolve para mim, cria uma central de posts. Eu quero só abrir um link e ter tudo na minha mão. Quero abrir um link, clicar para baixar o vídeo e ele estar no meu celular. Clicar, um clique só, para copiar a legenda, e ela já estar no meu Ctrl+C." E aí você chega no Instagram, bonitão, arrasta para o lado, clica, cola, e pronto.</span></p>
+<p class="tl"><button class="ts" data-t="67" type="button">01:07</button><span>Então, meu amigo, vou deixar para vocês um videozinho da central de posts que eu fiz, tá? Bem tranquilo, bem rápido, bem gostosinho de ver. Vocês vão se amarrar. Fiquem com o vídeo e falou!</span></p></div></div>
+</article>
+<article class="info" data-lesson="bonus-aula" hidden>
+  <p class="eyebrow">Bônus · 8:03</p>
+  <h1>Central de Posts: aula completa</h1>
+  <p class="desc">A aula inteira de como montar e usar a sua Central de Posts.</p>
+  <div class="acts"><button type="button" class="done" aria-pressed="false"><span class="ck" aria-hidden="true"></span><span class="lab">Marcar como assistida</span></button></div>
+  
+  
+</article>
+      </div>
+    </div>
+    <aside class="side" aria-label="Aulas">
+      <h2>Aulas <small>8 vídeos · 46 min</small></h2>
+      <ol class="list">
+<li><a href="#aula-01" class="item" data-id="aula-01"><img src="v/aula-01.jpg" alt="" loading="lazy" width="112" height="63"><span class="txt"><span class="n">Aula 01</span><span class="t">Boas-vindas</span></span><span class="d">6:34</span><span class="st" aria-hidden="true"></span></a></li>
+<li><a href="#aula-02" class="item" data-id="aula-02"><img src="v/aula-02.jpg" alt="" loading="lazy" width="112" height="63"><span class="txt"><span class="n">Aula 02</span><span class="t">Gastar menos crédito</span></span><span class="d">2:18</span><span class="st" aria-hidden="true"></span></a></li>
+<li><a href="#aula-03" class="item" data-id="aula-03"><img src="v/aula-03.jpg" alt="" loading="lazy" width="112" height="63"><span class="txt"><span class="n">Aula 03</span><span class="t">Novelinha no TikTok</span></span><span class="d">6:11</span><span class="st" aria-hidden="true"></span></a></li>
+<li><a href="#complemento" class="item" data-id="complemento"><img src="v/complemento-flow.jpg" alt="" loading="lazy" width="112" height="63"><span class="txt"><span class="n">Complemento</span><span class="t">Vídeos automáticos com o Flow</span></span><span class="d">12:47</span><span class="st" aria-hidden="true"></span></a></li>
+<li><a href="#aula-04" class="item" data-id="aula-04"><img src="v/aula-04.jpg" alt="" loading="lazy" width="112" height="63"><span class="txt"><span class="n">Aula 04</span><span class="t">Clonagem de vídeos</span></span><span class="d">7:29</span><span class="st" aria-hidden="true"></span></a></li>
+<li><a href="#aula-05" class="item" data-id="aula-05"><img src="v/aula-05.jpg" alt="" loading="lazy" width="112" height="63"><span class="txt"><span class="n">Aula 05</span><span class="t">Ajustes necessários</span></span><span class="d">2:02</span><span class="st" aria-hidden="true"></span></a></li>
+<li><a href="#bonus" class="item" data-id="bonus"><img src="v/bonus-intro.jpg" alt="" loading="lazy" width="112" height="63"><span class="txt"><span class="n">Bônus</span><span class="t">Central de Posts: apresentação</span></span><span class="d">1:21</span><span class="st" aria-hidden="true"></span></a></li>
+<li><a href="#bonus-aula" class="item" data-id="bonus-aula"><img src="v/bonus-central.jpg" alt="" loading="lazy" width="112" height="63"><span class="txt"><span class="n">Bônus</span><span class="t">Central de Posts: aula completa</span></span><span class="d">8:03</span><span class="st" aria-hidden="true"></span></a></li>
+      </ol>
+    </aside>
+  </section>
+
+  <section class="matwrap gut" id="materiais" aria-label="Materiais">
+    <h2>Materiais <small>copie e cole no Claude</small></h2>
+    <div class="matgrid">
+<article class="mat" id="m-economia">
+  <header><p class="eyebrow">Aula 02</p><h3>Regras de economia de crédito</h3></header>
+  <details><summary>Como usar</summary><div class="prose"><ul>
+<li>No Claude Code: salve este arquivo na pasta do seu projeto com o nome CLAUDE.md (ou cole o conteúdo no CLAUDE.md que já existe). O Claude lê sozinho toda vez que abrir a pasta.</li>
+<li>No app do Claude: crie um Projeto, abra "Instruções do projeto" e cole tudo o que está abaixo desta caixa.</li>
+<li>Sem projeto: cole o texto no começo da conversa, antes do seu pedido.</li>
+</ul></div></details>
+  <pre class="code" tabindex="0"># Regras de economia de crédito
+
+Você vai gerar imagens e vídeos para mim no Google Flow e no Gemini, pelo meu Chrome. Crédito e limite de uso custam dinheiro. Siga estas regras em todo trabalho, sem eu precisar lembrar.
+
+## Antes de começar
+
+- Abra o Flow e me mostre o meu saldo de créditos.
+- Confira na tela quanto custa cada coisa hoje: imagem, vídeo em cada qualidade e cada modelo. Os preços mudam, então não confie no que você lembra.
+- Me diga quanto o trabalho vai gastar, mais ou menos. Se passar do limite que eu te dei, pergunte antes de começar.
+- Guarde uma reserva do saldo para refazer cenas que derem errado.
+
+## As 6 regras
+
+### 1. Imagem antes de vídeo
+Nunca anime direto do texto. Primeiro gere a imagem do início de cada cena e corrija tudo o que estiver errado nela: rosto, mão, roupa, cenário. Só depois transforme em vídeo. Imagem custa muito menos do que vídeo, e no Flow muitas vezes não custa nada.
+
+### 2. Teste a cena mais difícil primeiro, na qualidade mais baixa
+Antes de gerar todos os vídeos, escolha a cena mais difícil, a que tem mais movimento ou mais personagens, e gere só ela no modelo e na qualidade mais baratos. Me mostre o resultado. Só gere o resto depois que o teste funcionar.
+
+### 3. Roteiro aprovado antes de gerar
+Não gere nenhuma imagem nem vídeo antes de eu aprovar o roteiro. Mudar a história depois de gerar é pagar duas vezes.
+
+### 4. Deu erro? Confira antes de pedir de novo
+Se a geração falhar ou a tela travar, não envie o pedido de novo na hora. Primeiro confira se o arquivo não foi criado mesmo: atualize a página, olhe a galeria ou o histórico e, se precisar, feche a aba e abra outra. Muitas vezes o vídeo ficou pronto e a tela só não atualizou. Se falhou de verdade, descubra o motivo antes de repetir.
+
+### 5. Mesmo bloco de estilo em todo pedido
+Escreva um bloco fixo de texto com o estilo, a textura, a luz e o que evitar, e repita esse bloco igual em todos os pedidos. Assim nada sai diferente e não precisa refazer.
+
+### 6. Acabou o crédito do Flow? Vá para o Gemini
+Se o saldo do Flow acabar, continue o trabalho no Gemini, que também gera imagem e vídeo. Me avise que vai demorar mais: o Gemini tem um limite de uso que volta de tempos em tempos, e imagem e vídeo dividem o mesmo limite. Quando o limite bater, anote a hora em que ele volta, espere e continue de onde parou.
+
+## Sempre
+
+- Peça **um resultado por geração**. Se o Flow estiver configurado para criar 2 ou 4 versões de cada pedido, mude para 1 antes de gerar.
+- Gere poucos pedidos por vez e trabalhe com calma, com pausas entre um e outro. Gerar muito rápido pode fazer o Google estranhar a conta.
+- Antes de cada geração, confirme o modelo, o formato, a duração e a qualidade.
+- Na primeira vez, me mostre cada imagem antes de animar. Se eu disser &quot;pode aprovar sozinho&quot;, siga sem perguntar, mas sem passar do limite de crédito.
+- No fim, me diga quantos créditos usou, quanto sobrou e o que precisou ser refeito.</pre>
+  <div class="mact"><button type="button" class="copy">Copiar o texto</button><a class="ghost" href="materiais/economia.md" download>Baixar o arquivo</a></div>
+</article>
+<article class="mat" id="m-novelinha">
+  <header><p class="eyebrow">Aula 03</p><h3>Prompt da novelinha</h3></header>
+  <details><summary>Como usar</summary><div class="prose"><ol>
+<li>Deixe o Google Flow e o Gemini abertos e logados no Chrome, com a extensão do Claude ligada.</li>
+<li>Copie tudo o que está abaixo desta caixa e cole no Claude.</li>
+<li>Troque só o que está entre [COLCHETES] pela sua ideia. O resto pode ficar como está.</li>
+</ol></div></details>
+  <pre class="code" tabindex="0">Você vai ser o diretor da minha animação. Quero criar uma história em vídeo no Google Flow, do roteiro ao vídeo final, usando o Flow que está aberto e logado no meu Chrome. Se os créditos do Flow acabarem, continue no Gemini e me avise que vai demorar mais.
+
+## Minha ideia
+
+- História: [DESCREVA A SUA HISTÓRIA OU O TEMA]
+- Estilo visual: [EX.: MASSINHA, PAPEL RECORTADO, AQUARELA, 3D, ANIME]
+- Personagens: [FICTÍCIOS, CRIADOS POR VOCÊ / EU MESMO OU UMA PESSOA QUE AUTORIZOU: AS FOTOS ESTÃO NA PASTA ...]
+- Formato: [VERTICAL 9:16 OU HORIZONTAL 16:9]
+- Duração: [EX.: 1 VÍDEO DE 30 SEGUNDOS OU 5 EPISÓDIOS DE 30 SEGUNDOS]
+- Som: [NARRADOR EM OFF, PERSONAGENS FALANDO OU SÓ TRILHA]
+- Narração: [EU GRAVO E TE MANDO / VOCÊ GERA A VOZ]
+- Idioma: [EX.: PORTUGUÊS DO BRASIL]
+- Uso: [PESSOAL, REDES SOCIAIS OU COMERCIAL]
+- Créditos do Flow que posso gastar: [QUANTIDADE]
+- Aprovação das gerações: [PEDIR MINHA APROVAÇÃO OU APROVAR AUTOMATICAMENTE]
+- Pasta do projeto: [CAMINHO DA PASTA NO SEU COMPUTADOR]
+
+## Como trabalhar
+
+Antes de gerar, veja meu saldo de créditos e confira na tela do Flow e na ajuda oficial os limites atuais: modelos, duração por clipe, formatos, resolução e preço. Me mostre um resumo curto. Se faltar algo importante, faça até 4 perguntas. Trabalhe nesta ordem, conferindo cada etapa antes de seguir.
+
+### 1. Roteiro
+
+Escreva a história com começo, meio e fim. Divida em cenas que caibam no limite de duração de um clipe. Para cada cena, informe duração, imagem e fala, confirmando que a fala cabe no tempo. Se for mais de um vídeo, organize em ordem de história. Me mostre o roteiro antes de continuar.
+
+### 2. Identidade visual
+
+Crie um bloco fixo de texto que descreva o estilo, a textura, a luz e o que evitar. Repita esse bloco em todos os pedidos, para o visual não mudar entre as imagens.
+
+### 3. Personagens
+
+Liste só os personagens que aparecem no roteiro. Crie cada um separadamente na área de personagens do Flow, como character sheet: fundo neutro, quatro vistas (frente, três quartos, perfil e costas), três expressões e nenhum texto. Se o personagem for uma pessoa real, use as fotos da pasta como referência. Compare os personagens entre si e ajuste quem parecer de outro filme. Se refizer um personagem, confira se a versão final ficou salva.
+
+### 4. Cenários
+
+Gere cada cenário vazio, sem personagens, no formato do vídeo e com espaço livre para a ação.
+
+### 5. Quadros iniciais
+
+Gere uma imagem para o início de cada cena, usando os personagens e cenários como referência. Corrija o que estiver errado antes de animar, porque imagem custa menos que vídeo.
+
+### 6. Teste
+
+Escolha a cena mais difícil e gere só ela na menor qualidade. Confira movimento, consistência dos personagens e preço. Só gere o restante depois que o teste funcionar.
+
+### 7. Vídeos
+
+Gere um clipe por cena a partir dos quadros iniciais, em poucos pedidos por vez. Baixe os clipes e confira nome, duração e conteúdo de cada um. Se uma geração falhar, olhe a causa antes de repetir. Se uma tela der erro, confira o que foi criado antes de reenviar, para não pagar em dobro.
+
+### 8. Voz
+
+Se eu for gravar a narração, espere os meus áudios na pasta do projeto e use-os na ordem do roteiro. Se você for gerar a voz, teste a mesma frase em até 3 vozes com a menor quantidade de créditos e me diga qual recomenda e por quê. Use a mesma voz em todas as falas. Depois de gerar, transcreva as falas e compare com o roteiro.
+
+### 9. Montagem
+
+Junte os clipes na ordem, com narração, trilha e efeitos que combinem com a história. Use apenas material que eu possa usar. Confira duração, volume, cortes e sincronia de cada fala com sua cena. Se forem vários episódios, entregue também um vídeo completo.
+
+### 10. Thumbs
+
+Crie uma capa para cada vídeo, com um elemento em destaque e até 4 palavras. Confira a grafia e a leitura em tamanho de celular.
+
+### 11. Entrega
+
+Organize tudo em uma pasta com três partes: VIDEOS FINAIS, THUMBS e PRODUCAO. Me diga onde estão os arquivos, quantos créditos usou, o que foi conferido e o que eu ainda preciso avaliar.
+
+## Regras
+
+- Respeite o limite de créditos e me avise antes de ultrapassá-lo. Reserve parte do saldo para refazer cenas.
+- Antes de cada geração, confirme modelo, formato, duração, resolução e quantidade de resultados.
+- Envie cada pedido ao Flow em uma só linha. Olhe a tela antes de clicar, porque a interface pode mudar.
+- Não copie personagens, marcas ou estilos protegidos. Se o uso for comercial, me avise de qualquer risco de direitos antes de publicar.
+- Não use o rosto de ninguém sem autorização.
+- Não apague nada sem a minha autorização.
+- Não diga que algo está pronto sem conferir o arquivo final. Como você não ouve áudio, me avise quando só eu puder avaliar o som.</pre>
+  <div class="mact"><button type="button" class="copy">Copiar o texto</button><a class="ghost" href="materiais/novelinha.md" download>Baixar o arquivo</a></div>
+</article>
+<article class="mat" id="m-vigia">
+  <header><p class="eyebrow">Aula 03</p><h3>Pedido do Vigia</h3></header>
+  <details><summary>Como usar</summary><div class="prose"><p>Cole este pedido no Claude depois que o roteiro estiver aprovado, quando ainda faltar algo que demora: a sua gravação chegar ou o limite do Gemini voltar. Importante: o vigia só funciona com o computador ligado, sem entrar em repouso, e com a conversa do Claude aberta. Se o computador dormir, o vigia dorme junto.</p></div></details>
+  <pre class="code" tabindex="0">Fique de vigia neste projeto até tudo ficar pronto, sem esperar eu pedir de novo.
+
+- Pasta do projeto: [CAMINHO DA PASTA]
+- Onde as minhas gravações vão chegar: [EX.: A PASTA DO PROJETO, DOWNLOADS OU A PASTA DO GRAVADOR]
+
+## O que vigiar
+
+1. **As minhas gravações.** Quando um áudio ou vídeo novo meu chegar, copie para a pasta do projeto (sem mexer no original), transcreva, descubra de qual cena do roteiro ele é e anote numa lista. Me avise se faltar alguma fala ou se alguma estiver diferente do roteiro.
+2. **O limite do Gemini e do Flow.** Se o limite de uso bater ou o crédito acabar, anote a hora em que volta, espere e continue as gerações de onde parou.
+3. **As gerações que falharam.** Antes de pedir de novo, confira se o arquivo não foi criado. Se a aba travar, feche e abra outra.
+
+## Quando terminar
+
+Quando todas as cenas e todas as falas estiverem prontas, me avise e comece a edição do vídeo. Me mostre a primeira versão para eu pedir ajustes.
+
+Antes de começar, impeça o computador de entrar em repouso enquanto você trabalha, se conseguir, e me diga como você vai vigiar: de quanto em quanto tempo vai olhar e o que acontece se eu fechar esta conversa.</pre>
+  <div class="mact"><button type="button" class="copy">Copiar o texto</button><a class="ghost" href="materiais/vigia.md" download>Baixar o arquivo</a></div>
+</article>
+<article class="mat" id="m-clonagem">
+  <header><p class="eyebrow">Aula 04</p><h3>Prompt da clonagem de vídeo</h3></header>
+  <details><summary>Como usar</summary><div class="prose"><ol>
+<li>Deixe o Google Flow e o Gemini abertos e logados no Chrome, com a extensão do Claude ligada.</li>
+<li>Crie uma pasta para o projeto e, se você for aparecer no vídeo, coloque nela 5 a 10 fotos suas (rosto bem visível, de frente e de lado, luz boa).</li>
+<li>Copie tudo o que está abaixo desta caixa, cole no Claude e troque só o que está entre [COLCHETES].</li>
+</ol></div></details>
+  <pre class="code" tabindex="0">Quero clonar a estrutura de um vídeo que já deu certo e fazer a minha versão, do roteiro ao vídeo editado, usando o Google Flow e o Gemini que estão abertos e logados no meu Chrome.
+
+## O vídeo e o meu projeto
+
+- Vídeo de referência: [COLE O LINK OU O CAMINHO DO ARQUIVO]
+- O que eu quero vender ou divulgar: [SEU PRODUTO, SERVIÇO OU ASSUNTO, EM 1 OU 2 FRASES]
+- Para quem: [QUEM É O SEU PÚBLICO]
+- Chamada no fim: [EX.: &quot;COMENTA PALAVRA&quot;, &quot;LINK NA BIO&quot;, &quot;ME SEGUE&quot;]
+- Formato: [VERTICAL 9:16 OU HORIZONTAL 16:9]
+- Duração: [IGUAL À REFERÊNCIA OU OUTRA]
+- Quem aparece: [EU (FOTOS NA PASTA ...) / PERSONAGEM FICTÍCIO / NINGUÉM]
+- Falas: [EU GRAVO A NARRAÇÃO / VOCÊ GERA A VOZ / CADA PERSONAGEM FALA]
+- Créditos do Flow que posso gastar: [QUANTIDADE]
+- Pasta do projeto: [CAMINHO DA PASTA NO SEU COMPUTADOR]
+
+## Como trabalhar
+
+Siga esta ordem e me mostre cada etapa antes de seguir.
+
+### 1. Extrair o vídeo
+
+Abra o vídeo de referência. Se o link não abrir, me avise que eu baixo e mando o arquivo. Extraia e me mostre, cena a cena:
+- **Cenas:** o que acontece em cada uma e quanto tempo dura cada corte.
+- **Textos:** tudo o que aparece escrito na tela.
+- **Imagens:** o enquadramento, o estilo visual e os elementos de cada cena.
+- **Narração:** a transcrição completa do que é falado.
+
+Depois, me diga em poucas linhas por que o vídeo funciona: o gancho dos primeiros segundos, a virada e o fecho.
+
+### 2. Roteiro
+
+Escreva o meu roteiro com a **mesma estrutura** (gancho, ritmo, virada e fecho), mas com o meu assunto, a minha história e as minhas palavras. Se você tiver skills de copy instaladas, use-as. Não copie frases, imagens nem a identidade da pessoa do vídeo original.
+
+Para cada cena, informe:
+- **Tempo:** quantos segundos dura, e se a fala cabe nesse tempo.
+- **Formato:** o enquadramento e o que aparece na tela.
+- **Falas:** o que o narrador ou cada personagem fala.
+
+Me mostre o roteiro e espere eu aprovar.
+
+### 3. Narração
+
+Se eu for gravar: me entregue as falas numeradas por cena, para eu gravar todas de uma vez. Fique de vigia na pasta do projeto e, quando cada áudio chegar, salve, transcreva, confira com o roteiro e siga usando os que já chegaram.
+Se você for gerar a voz: teste a mesma frase em até 3 vozes, me diga qual recomenda e use a mesma voz em todas as falas.
+
+### 4. Personagem
+
+Se eu for aparecer, use as minhas fotos da pasta e crie um character sheet: fundo neutro, quatro vistas (frente, três quartos, perfil e costas), três expressões e nenhum texto. Ele vira a referência de todas as cenas. Se for um personagem fictício, crie o character sheet a partir da descrição do roteiro.
+
+### 5. Imagens das cenas
+
+Gere uma imagem para o início de cada cena, com o mesmo bloco de estilo em todos os pedidos e o character sheet como referência. Me mostre todas antes de animar e corrija o que estiver errado.
+
+### 6. Vídeos das cenas
+
+Teste primeiro a cena mais difícil, na menor qualidade. Depois gere um vídeo por cena a partir das imagens aprovadas. Use o Flow. Se os créditos acabarem, continue no Gemini, com uma conversa por cena, e me avise que vai demorar mais. Quando o limite do Gemini bater, anote a hora em que volta e continue sozinho.
+
+### 7. Edição
+
+Quando tudo estiver pronto, edite o vídeo: narração limpa (tire o ruído sem deixar a voz robótica), cortes no ritmo da fala, legenda, trilha que abaixa quando alguém fala e a chamada no fim. Me mostre a primeira versão para eu pedir ajustes.
+
+## Regras
+
+- Respeite o limite de créditos e me avise antes de ultrapassá-lo.
+- Não use o rosto de ninguém sem autorização, nem marcas ou personagens de terceiros.
+- Não apague nada sem a minha autorização.
+- Não diga que algo está pronto sem conferir o arquivo final. Como você não ouve áudio, me avise quando só eu puder avaliar o som.</pre>
+  <div class="mact"><button type="button" class="copy">Copiar o texto</button><a class="ghost" href="materiais/clonagem.md" download>Baixar o arquivo</a></div>
+</article>
+<article class="mat" id="m-skill">
+  <header><p class="eyebrow">Aula 03</p><h3>Skill Tira-Dúvidas</h3></header>
+  <div class="prose"><p>Uma skill para o Claude que conhece o curso inteiro. Instale uma vez e pergunte as suas dúvidas direto no chat.</p>
+  <ol><li>Baixe o arquivo <b>.zip</b> abaixo (pelo computador).</li><li>No app do Claude, abra <b>Configurações &gt; Capacidades</b> e ligue a execução de código e a criação de arquivos.</li><li>Em <b>Personalizar &gt; Skills</b>, toque em <b>+</b> e envie o .zip.</li><li>Ligue a chave ao lado de <code>piloto-automatico-duvidas</code>.</li></ol></div>
+  <div class="mact"><a class="copy" href="materiais/piloto-automatico-duvidas.zip" download>Baixar a skill (.zip)</a></div>
+</article>
+    </div>
+  </section>
+</main>
+<footer class="foot gut">Piloto Automático · Augusto Fonte</footer>
+
+<script>
+(function(){
+  var DATA = [{"id": "aula-01", "v": "aula-01", "t": "Boas-vindas"}, {"id": "aula-02", "v": "aula-02", "t": "Gastar menos crédito"}, {"id": "aula-03", "v": "aula-03", "t": "Novelinha no TikTok"}, {"id": "complemento", "v": "complemento-flow", "t": "Vídeos automáticos com o Flow"}, {"id": "aula-04", "v": "aula-04", "t": "Clonagem de vídeos"}, {"id": "aula-05", "v": "aula-05", "t": "Ajustes necessários"}, {"id": "bonus", "v": "bonus-intro", "t": "Central de Posts: apresentação"}, {"id": "bonus-aula", "v": "bonus-central", "t": "Central de Posts: aula completa"}];
+  var ids = DATA.map(function(d){return d.id});
+  var vid = document.getElementById('vid'), player = document.getElementById('player');
+  var store = {
+    get:function(k,d){try{var v=localStorage.getItem('pa:'+k);return v===null?d:JSON.parse(v)}catch(e){return d}},
+    set:function(k,v){try{localStorage.setItem('pa:'+k,JSON.stringify(v))}catch(e){}}
+  };
+  var seen = store.get('seen', {}), cur = null, lastSave = 0;
+
+  function paint(){
+    var n = ids.filter(function(i){return seen[i]}).length;
+    document.getElementById('progtxt').textContent = n + ' de ' + ids.length;
+    document.getElementById('barfill').style.width = (100*n/ids.length) + '%';
+    document.querySelectorAll('.item').forEach(function(a){a.classList.toggle('seen', !!seen[a.dataset.id])});
+    document.querySelectorAll('.info').forEach(function(a){
+      var b = a.querySelector('.done'), on = !!seen[a.dataset.lesson];
+      b.setAttribute('aria-pressed', on); b.querySelector('.lab').textContent = on ? 'Assistida' : 'Marcar como assistida';
+    });
+  }
+  function mark(id, on){ if(on) seen[id]=true; else delete seen[id]; store.set('seen', seen); paint(); }
+
+  function open(id, opts){
+    if(ids.indexOf(id) < 0) return;
+    opts = opts || {};
+    var d = DATA[ids.indexOf(id)];
+    if(cur !== id){
+      cur = id;
+      vid.src = 'v/' + d.v + '.mp4';
+      vid.poster = 'v/' + d.v + '.jpg';
+      var pos = store.get('pos:' + id, 0);
+      if(pos > 5) vid.addEventListener('loadedmetadata', function f(){ vid.removeEventListener('loadedmetadata', f); if(pos < vid.duration - 10) vid.currentTime = pos; });
+      document.querySelectorAll('.info').forEach(function(a){a.hidden = a.dataset.lesson !== id});
+      document.querySelectorAll('.item').forEach(function(a){a.setAttribute('aria-current', a.dataset.id === id)});
+      store.set('last', id);
+      document.title = d.t + ' · Piloto Automático';
+    }
+    if(opts.scroll) player.scrollIntoView({behavior:'smooth', block:'start'});
+    if(opts.play) vid.play().catch(function(){});
+  }
+
+  function route(){
+    var h = location.hash.slice(1);
+    if(ids.indexOf(h) >= 0) open(h, {scroll:true});
+  }
+  window.addEventListener('hashchange', route);
+
+  vid.addEventListener('timeupdate', function(){
+    var now = Date.now();
+    if(cur && now - lastSave > 4000){ lastSave = now; store.set('pos:' + cur, vid.currentTime); }
+    if(cur && !seen[cur] && vid.duration && vid.currentTime / vid.duration > 0.9) mark(cur, true);
+  });
+  vid.addEventListener('play', function(){ player.classList.add('stick') });
+  vid.addEventListener('pause', function(){ player.classList.remove('stick') });
+  vid.addEventListener('ended', function(){ player.classList.remove('stick'); if(cur){ mark(cur, true); store.set('pos:' + cur, 0); } });
+
+  document.addEventListener('click', function(e){
+    var t = e.target.closest('button,a'); if(!t) return;
+    if(t.classList.contains('done')){ mark(cur, !seen[cur]); return; }
+    if(t.classList.contains('next')){ var i = ids.indexOf(cur); if(i < ids.length - 1){ location.hash = ids[i+1]; } return; }
+    if(t.classList.contains('tab')){
+      var box = t.closest('.info');
+      box.querySelectorAll('.tab').forEach(function(b){b.setAttribute('aria-selected', b === t)});
+      box.querySelectorAll('.pane').forEach(function(p){p.hidden = p.dataset.pane !== t.dataset.tab});
+      return;
+    }
+    if(t.classList.contains('ts')){
+      vid.currentTime = +t.dataset.t; vid.play().catch(function(){});
+      var r = player.getBoundingClientRect(); if(r.bottom < 60 || r.top > innerHeight) player.scrollIntoView({behavior:'smooth', block:'start'});
+      return;
+    }
+    if(t.tagName === 'BUTTON' && t.classList.contains('copy')){
+      var pre = t.closest('.mat').querySelector('.code'), txt = pre.textContent, lab = t.textContent;
+      var ok = function(){ t.textContent = 'Copiado'; setTimeout(function(){ t.textContent = lab }, 1800) };
+      if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(ok, fallback); } else fallback();
+      function fallback(){ var s = getSelection(), rg = document.createRange(); rg.selectNodeContents(pre); s.removeAllRanges(); s.addRange(rg); try{ document.execCommand('copy'); ok(); }catch(err){ t.textContent = 'Texto selecionado'; } }
+    }
+  });
+
+  paint();
+  var start = location.hash.slice(1);
+  if(ids.indexOf(start) < 0){
+    start = store.get('last', null);
+    if(ids.indexOf(start) < 0) start = ids.filter(function(i){return !seen[i]})[0] || ids[0];
+  }
+  open(start);
+})();
+</script>
+</body>
+</html>
